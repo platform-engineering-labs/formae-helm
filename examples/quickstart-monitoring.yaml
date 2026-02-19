@@ -1,0 +1,73 @@
+# Full monitoring quickstart: formae + PostgreSQL + Prometheus + Grafana
+#
+# This example deploys everything needed to see formae dashboards in Grafana,
+# including the monitoring stack itself (kube-prometheus-stack).
+#
+# Step 1: Install the monitoring stack
+#
+#   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+#   helm repo update
+#   helm install kube-prom prometheus-community/kube-prometheus-stack \
+#     --namespace monitoring --create-namespace \
+#     --set grafana.sidecar.dashboards.enabled=true \
+#     --set grafana.sidecar.dashboards.searchNamespace=ALL \
+#     --set-string grafana.sidecar.dashboards.label=grafana_dashboard \
+#     --set-string grafana.sidecar.dashboards.labelValue="1" \
+#     --set grafana.sidecar.dashboards.folderAnnotation=grafana_folder
+#
+# Step 2: Install formae
+#
+#   helm install formae . -f examples/quickstart-monitoring.yaml \
+#     --set postgresql.auth.password=changeme
+#
+# Step 3: Access Grafana
+#
+#   kubectl -n monitoring port-forward svc/kube-prom-grafana 3000:80
+#   open http://localhost:3000
+#   Login: admin / admin
+#
+#   Dashboards are in the "formae" folder.
+#
+
+postgresql:
+  enabled: true
+  auth:
+    username: formae
+    # password: set via --set or existingSecret
+    database: formae
+  persistence:
+    enabled: true
+    size: 8Gi
+
+formae:
+  datastore:
+    type: postgres
+
+  otel:
+    enabled: true
+    serviceName: formae-agent
+    otlp:
+      enabled: true
+      endpoint: "localhost:4317"
+      protocol: grpc
+      insecure: true
+    prometheus:
+      enabled: true
+
+grafana:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
+    folder: formae
+
+otelCollector:
+  enabled: true
+
+resources:
+  requests:
+    memory: 1Gi
+    cpu: "2"
+  limits:
+    memory: 1.5Gi
+    cpu: "4"

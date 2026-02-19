@@ -1,0 +1,37 @@
+# formae agent + external PostgreSQL (RDS, Cloud SQL, etc.)
+#
+# Usage:
+#   helm install formae . -f examples/formae-external-db.yaml \
+#     --set formae.datastore.postgres.host=mydb.example.com \
+#     --set formae.datastore.postgres.password=<your-password>
+#
+# Deploys: formae agent only (connects to external database)
+# Good for: Production with managed database service
+
+postgresql:
+  enabled: false
+
+formae:
+  datastore:
+    type: postgres
+    postgres:
+      # host: set via --set
+      port: 5432
+      user: formae
+      # password: set via --set or use existingSecret
+      database: formae
+      schema: public
+      # existingSecret: my-db-secret
+      # existingSecretKey: password
+
+grafana:
+  dashboards:
+    enabled: false
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: "1"
+  limits:
+    memory: 1Gi
+    cpu: "2"

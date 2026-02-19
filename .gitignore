@@ -1,0 +1,8 @@
+# Helm
+charts/
+*.tgz
+Chart.lock
+
+# PKL
+PklProject.deps.json
+tmp/

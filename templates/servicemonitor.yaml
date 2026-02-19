@@ -1,0 +1,18 @@
+{{- if and .Values.formae.otel.enabled .Values.otelCollector.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "formae.fullname" . }}
+  labels:
+    {{- include "formae.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "formae.selectorLabels" . | nindent 6 }}
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  endpoints:
+    - port: metrics
+      interval: 15s
+{{- end }}

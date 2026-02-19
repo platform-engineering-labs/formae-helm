@@ -1,0 +1,28 @@
+# formae agent only — SQLite datastore, no external dependencies
+#
+# Usage:
+#   helm install formae . -f examples/formae-only.yaml
+#
+# Deploys: formae agent (SQLite, ephemeral storage)
+# Good for: Development, testing, quick evaluation
+
+postgresql:
+  enabled: false
+
+formae:
+  datastore:
+    type: sqlite
+    sqlite:
+      filePath: /data/formae.db
+
+grafana:
+  dashboards:
+    enabled: false
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: "1"
+  limits:
+    memory: 1Gi
+    cpu: "2"

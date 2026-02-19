@@ -1,0 +1,292 @@
+## formae Agent Helm Chart Values
+
+replicaCount: 1
+
+image:
+  repository: ghcr.io/platform-engineering-labs/formae
+  pullPolicy: IfNotPresent
+  tag: ""  # defaults to appVersion
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  create: true
+  automount: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+      - ALL
+
+## formae agent configuration
+formae:
+  ## Datastore backend: "postgres", "sqlite", "auroradataapi"
+  datastore:
+    type: postgres
+
+    postgres:
+      ## Only used when postgresql.enabled is false (external DB)
+      host: ""
+      port: 5432
+      user: formae
+      password: ""
+      database: formae
+      schema: public
+      connectionParams: ""
+      ## Use an existing secret for the password
+      existingSecret: ""
+      existingSecretKey: password
+
+    sqlite:
+      filePath: /data/formae.db
+
+    auroraDataAPI:
+      clusterARN: ""
+      secretARN: ""
+      database: formae
+      region: us-east-1
+      endpoint: ""
+
+  ## Server configuration
+  server:
+    port: 49684
+    ergoPort: 0
+    registrarPort: 0
+    observerPort: 0
+    ## TLS configuration
+    tls:
+      enabled: false
+      certSecret: ""
+      certKey: tls.crt
+      keyKey: tls.key
+
+  ## Logging configuration
+  logging:
+    consoleLogLevel: info  # debug, info, warn, error
+    fileLogLevel: info
+    filePath: ""
+
+  ## Synchronization (drift detection)
+  synchronization:
+    enabled: true
+    interval: 5.min  # PKL Duration syntax
+
+  ## Discovery configuration
+  discovery:
+    enabled: true
+    interval: 10.min  # PKL Duration syntax
+    labelTagKeys: []
+    resourceTypesToDiscover: []
+
+  ## Retry configuration
+  retry:
+    statusCheckInterval: 20.s  # PKL Duration syntax
+    maxRetries: 9
+    retryDelay: 10.s  # PKL Duration syntax
+
+  ## OpenTelemetry configuration
+  otel:
+    enabled: false
+    serviceName: formae-agent
+    otlp:
+      enabled: false
+      endpoint: "localhost:4317"
+      protocol: grpc
+      insecure: true
+      temporality: delta
+    prometheus:
+      enabled: false
+
+  ## CLI configuration
+  cli:
+    disableUsageReporting: true
+
+  ## Plugin configuration
+  plugins:
+    pluginDir: /opt/pel/formae/plugins
+
+  ## Raw additional PKL config lines appended to formae.conf.pkl
+  extraConfig: ""
+
+## Service configuration
+service:
+  type: ClusterIP
+  port: 49684
+  annotations: {}
+
+## Ingress configuration
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: formae.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+## Resource sizing
+## Recommendations from docs:
+##   <= 1000 resources:   512Mi / 1 CPU
+##   1000-5000 resources: 1Gi  / 2 CPU
+##   5000-10000:          1.5Gi / 2-4 CPU
+##   10000-20000:         2Gi  / 4 CPU
+resources:
+  requests:
+    memory: 512Mi
+    cpu: "1"
+  limits:
+    memory: 1Gi
+    cpu: "2"
+
+## Autoscaling (generally formae is a single-instance agent)
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 3
+  targetCPUUtilizationPercentage: 80
+
+## Persistence for SQLite datastore
+persistence:
+  enabled: false
+  storageClass: ""
+  accessModes:
+    - ReadWriteOnce
+  size: 1Gi
+  existingClaim: ""
+
+## Node scheduling
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+## Probes
+livenessProbe:
+  httpGet:
+    path: /api/v1/health
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/v1/health
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+## Extra environment variables
+extraEnv: []
+
+## Extra volumes and mounts
+extraVolumes: []
+extraVolumeMounts: []
+
+# --------------------------------------------------------------------------
+# In-cluster PostgreSQL (official Docker image)
+# --------------------------------------------------------------------------
+postgresql:
+  enabled: true
+  image:
+    repository: postgres
+    tag: "15-alpine"
+    pullPolicy: IfNotPresent
+  auth:
+    username: formae
+    password: ""        # set via --set or secrets
+    database: formae
+    existingSecret: ""
+    existingSecretKey: password
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: ""
+  resources:
+    requests:
+      memory: 256Mi
+      cpu: 250m
+    limits:
+      memory: 512Mi
+      cpu: 500m
+
+# --------------------------------------------------------------------------
+# Grafana dashboard provisioning
+# --------------------------------------------------------------------------
+grafana:
+  ## Enable Grafana dashboard ConfigMaps (auto-discovered by Grafana sidecar)
+  dashboards:
+    enabled: true
+    ## Label that the Grafana sidecar watches for
+    label: grafana_dashboard
+    ## Value for the label
+    labelValue: "1"
+    ## Folder in Grafana UI
+    folder: formae
+    ## Namespace to create ConfigMaps in (defaults to release namespace)
+    namespace: ""
+
+# --------------------------------------------------------------------------
+# OpenTelemetry Collector sidecar
+# --------------------------------------------------------------------------
+otelCollector:
+  enabled: false
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: "0.96.0"
+    pullPolicy: IfNotPresent
+  resources:
+    requests:
+      memory: 128Mi
+      cpu: 100m
+    limits:
+      memory: 256Mi
+      cpu: 200m
+  ## Collector config (YAML string) — receives OTLP, exports to Prometheus
+  config: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      batch: {}
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:9090
+      debug:
+        verbosity: basic
+    service:
+      pipelines:
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [prometheus]
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [debug]

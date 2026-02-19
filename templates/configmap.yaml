@@ -1,0 +1,139 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "formae.fullname" . }}-config
+  labels:
+    {{- include "formae.labels" . | nindent 4 }}
+data:
+  formae.conf.pkl: |
+    amends "formae:/Config.pkl"
+
+    agent {
+      server {
+        port = {{ .Values.formae.server.port }}
+        {{- if .Values.formae.server.ergoPort }}
+        ergoPort = {{ .Values.formae.server.ergoPort }}
+        {{- end }}
+        {{- if .Values.formae.server.registrarPort }}
+        registrarPort = {{ .Values.formae.server.registrarPort }}
+        {{- end }}
+        {{- if .Values.formae.server.observerPort }}
+        observerPort = {{ .Values.formae.server.observerPort }}
+        {{- end }}
+      }
+
+      datastore {
+        datastoreType = {{ .Values.formae.datastore.type | quote }}
+
+        {{- if eq .Values.formae.datastore.type "postgres" }}
+        postgres {
+          host = {{ include "formae.postgres.host" . | quote }}
+          port = {{ default 5432 .Values.formae.datastore.postgres.port }}
+          user = {{ default "formae" .Values.formae.datastore.postgres.user | quote }}
+          password = read("env:FORMAE_DB_PASSWORD")
+          database = {{ default "formae" .Values.formae.datastore.postgres.database | quote }}
+          {{- if .Values.formae.datastore.postgres.schema }}
+          schema = {{ .Values.formae.datastore.postgres.schema | quote }}
+          {{- end }}
+          {{- if .Values.formae.datastore.postgres.connectionParams }}
+          connectionParams = {{ .Values.formae.datastore.postgres.connectionParams | quote }}
+          {{- end }}
+        }
+        {{- end }}
+
+        {{- if eq .Values.formae.datastore.type "sqlite" }}
+        sqlite {
+          filePath = {{ .Values.formae.datastore.sqlite.filePath | quote }}
+        }
+        {{- end }}
+
+        {{- if eq .Values.formae.datastore.type "auroradataapi" }}
+        auroraDataAPI {
+          clusterArn = {{ .Values.formae.datastore.auroraDataAPI.clusterARN | quote }}
+          secretArn = {{ .Values.formae.datastore.auroraDataAPI.secretARN | quote }}
+          database = {{ .Values.formae.datastore.auroraDataAPI.database | quote }}
+          region = {{ .Values.formae.datastore.auroraDataAPI.region | quote }}
+          {{- if .Values.formae.datastore.auroraDataAPI.endpoint }}
+          endpoint = {{ .Values.formae.datastore.auroraDataAPI.endpoint | quote }}
+          {{- end }}
+        }
+        {{- end }}
+      }
+
+      logging {
+        consoleLogLevel = {{ .Values.formae.logging.consoleLogLevel | quote }}
+        {{- if .Values.formae.logging.fileLogLevel }}
+        fileLogLevel = {{ .Values.formae.logging.fileLogLevel | quote }}
+        {{- end }}
+        {{- if .Values.formae.logging.filePath }}
+        filePath = {{ .Values.formae.logging.filePath | quote }}
+        {{- end }}
+      }
+
+      synchronization {
+        enabled = {{ .Values.formae.synchronization.enabled }}
+        interval = {{ .Values.formae.synchronization.interval }}
+      }
+
+      discovery {
+        enabled = {{ .Values.formae.discovery.enabled }}
+        interval = {{ .Values.formae.discovery.interval }}
+        {{- if .Values.formae.discovery.labelTagKeys }}
+        labelTagKeys {
+          {{- range .Values.formae.discovery.labelTagKeys }}
+          {{ . | quote }}
+          {{- end }}
+        }
+        {{- end }}
+        {{- if .Values.formae.discovery.resourceTypesToDiscover }}
+        resourceTypesToDiscover {
+          {{- range .Values.formae.discovery.resourceTypesToDiscover }}
+          {{ . | quote }}
+          {{- end }}
+        }
+        {{- end }}
+      }
+
+      retry {
+        statusCheckInterval = {{ .Values.formae.retry.statusCheckInterval }}
+        maxRetries = {{ .Values.formae.retry.maxRetries }}
+        retryDelay = {{ .Values.formae.retry.retryDelay }}
+      }
+
+      {{- if .Values.formae.otel.enabled }}
+      oTel {
+        enabled = true
+        serviceName = {{ .Values.formae.otel.serviceName | quote }}
+        {{- if .Values.formae.otel.otlp.enabled }}
+        otlp {
+          enabled = true
+          endpoint = {{ .Values.formae.otel.otlp.endpoint | quote }}
+          protocol = {{ .Values.formae.otel.otlp.protocol | quote }}
+          insecure = {{ .Values.formae.otel.otlp.insecure }}
+          {{- if .Values.formae.otel.otlp.temporality }}
+          temporality = {{ .Values.formae.otel.otlp.temporality | quote }}
+          {{- end }}
+        }
+        {{- end }}
+        {{- if .Values.formae.otel.prometheus.enabled }}
+        prometheus {
+          enabled = true
+        }
+        {{- end }}
+      }
+      {{- end }}
+    }
+
+    cli {
+      disableUsageReporting = {{ .Values.formae.cli.disableUsageReporting }}
+    }
+
+    {{- if .Values.formae.plugins.pluginDir }}
+    plugins {
+      pluginDir = {{ .Values.formae.plugins.pluginDir | quote }}
+    }
+    {{- end }}
+
+    {{- if .Values.formae.extraConfig }}
+    {{ .Values.formae.extraConfig | nindent 4 }}
+    {{- end }}

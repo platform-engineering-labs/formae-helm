@@ -1,0 +1,38 @@
+# formae agent + Aurora Data API
+#
+# Usage:
+#   helm install formae . -f examples/formae-aurora.yaml \
+#     --set formae.datastore.auroraDataAPI.clusterARN=arn:aws:rds:us-east-1:123456789:cluster:my-cluster \
+#     --set formae.datastore.auroraDataAPI.secretARN=arn:aws:secretsmanager:us-east-1:123456789:secret:my-secret
+#
+# Deploys: formae agent only (connects to Aurora via Data API)
+# Good for: AWS serverless production environments
+#
+# Note: The ServiceAccount may need IAM role annotation for IRSA:
+#   serviceAccount:
+#     annotations:
+#       eks.amazonaws.com/role-arn: arn:aws:iam::123456789:role/formae-role
+
+postgresql:
+  enabled: false
+
+formae:
+  datastore:
+    type: auroradataapi
+    auroraDataAPI:
+      # clusterARN: set via --set
+      # secretARN: set via --set
+      database: formae
+      region: us-east-1
+
+grafana:
+  dashboards:
+    enabled: false
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: "1"
+  limits:
+    memory: 1Gi
+    cpu: "2"

@@ -1,0 +1,15 @@
+{{- if .Values.grafana.dashboards.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "formae.fullname" . }}-dashboard-overview
+  namespace: {{ include "formae.grafana.namespace" . }}
+  labels:
+    {{- include "formae.labels" . | nindent 4 }}
+    {{ .Values.grafana.dashboards.label }}: {{ .Values.grafana.dashboards.labelValue | quote }}
+  annotations:
+    grafana_folder: {{ .Values.grafana.dashboards.folder | quote }}
+data:
+  formae-overview.json: |-
+{{ .Files.Get "dashboards/formae-overview.json" | indent 4 }}
+{{- end }}

@@ -1,0 +1,52 @@
+# formae agent + external PostgreSQL + Grafana dashboards + OTel
+#
+# Usage:
+#   helm install formae . -f examples/formae-external-db-grafana.yaml \
+#     --set formae.datastore.postgres.host=mydb.example.com \
+#     --set formae.datastore.postgres.password=<your-password>
+#
+# Deploys: formae agent + Grafana dashboard ConfigMaps + OTel collector sidecar
+# Good for: Production with managed DB and full observability
+
+postgresql:
+  enabled: false
+
+formae:
+  datastore:
+    type: postgres
+    postgres:
+      # host: set via --set
+      port: 5432
+      user: formae
+      # password: set via --set or use existingSecret
+      database: formae
+      schema: public
+
+  otel:
+    enabled: true
+    serviceName: formae-agent
+    otlp:
+      enabled: true
+      endpoint: "localhost:4317"
+      protocol: grpc
+      insecure: true
+    prometheus:
+      enabled: true
+
+grafana:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
+    folder: formae
+
+otelCollector:
+  enabled: true
+
+resources:
+  requests:
+    memory: 1Gi
+    cpu: "2"
+  limits:
+    memory: 1.5Gi
+    cpu: "4"

@@ -1,0 +1,33 @@
+# formae agent only — SQLite datastore with persistent volume
+#
+# Usage:
+#   helm install formae . -f examples/formae-only-persistent.yaml
+#
+# Deploys: formae agent (SQLite, PVC-backed storage)
+# Good for: Single-node deployments where you don't want a separate DB
+
+postgresql:
+  enabled: false
+
+formae:
+  datastore:
+    type: sqlite
+    sqlite:
+      filePath: /data/formae.db
+
+persistence:
+  enabled: true
+  size: 5Gi
+  # storageClass: ""  # Uses default storage class
+
+grafana:
+  dashboards:
+    enabled: false
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: "1"
+  limits:
+    memory: 1Gi
+    cpu: "2"

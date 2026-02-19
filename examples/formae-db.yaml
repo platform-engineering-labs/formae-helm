@@ -1,0 +1,33 @@
+# formae agent + in-cluster PostgreSQL
+#
+# Usage:
+#   helm install formae . -f examples/formae-db.yaml --set postgresql.auth.password=<your-password>
+#
+# Deploys: formae agent + Bitnami PostgreSQL StatefulSet
+# Good for: Staging, small production environments
+
+postgresql:
+  enabled: true
+  auth:
+    username: formae
+    # password: set via --set or existingSecret
+    database: formae
+  persistence:
+    enabled: true
+    size: 8Gi
+
+formae:
+  datastore:
+    type: postgres
+
+grafana:
+  dashboards:
+    enabled: false
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: "1"
+  limits:
+    memory: 1Gi
+    cpu: "2"

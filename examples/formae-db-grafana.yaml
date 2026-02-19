@@ -1,0 +1,55 @@
+# formae agent + in-cluster PostgreSQL + Grafana dashboards + OTel
+#
+# Usage:
+#   helm install formae . -f examples/formae-db-grafana.yaml --set postgresql.auth.password=<your-password>
+#
+# Deploys: formae agent + PostgreSQL + Grafana dashboard ConfigMaps + OTel collector sidecar
+# Good for: Production with full observability
+#
+# Prerequisites:
+#   - Grafana with sidecar enabled (watching for label grafana_dashboard=1)
+#   - Prometheus (scraping the OTel collector metrics endpoint)
+#   - Loki (for log panels in dashboards)
+
+postgresql:
+  enabled: true
+  auth:
+    username: formae
+    # password: set via --set or existingSecret
+    database: formae
+  persistence:
+    enabled: true
+    size: 8Gi
+
+formae:
+  datastore:
+    type: postgres
+
+  otel:
+    enabled: true
+    serviceName: formae-agent
+    otlp:
+      enabled: true
+      endpoint: "localhost:4317"
+      protocol: grpc
+      insecure: true
+    prometheus:
+      enabled: true
+
+grafana:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
+    folder: formae
+
+otelCollector:
+  enabled: true
+
+resources:
+  requests:
+    memory: 1Gi
+    cpu: "2"
+  limits:
+    memory: 1.5Gi
+    cpu: "4"

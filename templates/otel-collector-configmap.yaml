@@ -1,0 +1,11 @@
+{{- if .Values.otelCollector.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "formae.fullname" . }}-otel-collector
+  labels:
+    {{- include "formae.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    {{- .Values.otelCollector.config | nindent 4 }}
+{{- end }}

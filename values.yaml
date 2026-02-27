@@ -140,6 +140,13 @@ ingress:
           pathType: Prefix
   tls: []
 
+httpRoute:
+  enabled: false
+  annotations: {}
+  hostnames:
+    - formae.local
+  parentRefs: []
+
 ## Resource sizing
 ## Recommendations from docs:
 ##   <= 1000 resources:   512Mi / 1 CPU

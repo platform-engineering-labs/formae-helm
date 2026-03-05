@@ -2,8 +2,8 @@ apiVersion: v2
 name: formae
 description: Helm chart for deploying the formae infrastructure-as-code agent
 type: application
-version: 0.1.0
-appVersion: "0.82.0"
+version: 0.82.3
+appVersion: "0.82.3"
 home: https://docs.formae.io
 sources:
   - https://github.com/platform-engineering-labs/formae
@@ -15,4 +15,3 @@ keywords:
 maintainers:
   - name: Platform Engineering Labs
     url: https://platform.engineering
-

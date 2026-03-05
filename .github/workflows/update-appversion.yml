@@ -47,7 +47,12 @@ jobs:
           git checkout -b "$BRANCH"
           git add Chart.yaml
           git commit -m "chore: bump formae to ${VERSION}"
-          git push -u origin "$BRANCH"
+          git push --force -u origin "$BRANCH"
+          EXISTING_PR=$(gh pr list --head "$BRANCH" --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "PR #${EXISTING_PR} already exists for branch ${BRANCH}, updated with force push."
+            exit 0
+          fi
           gh pr create \
             --title "chore: bump formae to ${VERSION}" \
             --body "Automated PR to update formae to version \`${VERSION}\`.

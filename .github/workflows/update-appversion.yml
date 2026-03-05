@@ -37,18 +37,22 @@ jobs:
             yq -i '.appVersion = strenv(VERSION)' Chart.yaml
             yq -i '.version = strenv(VERSION)' Chart.yaml
 
-      - name: Create pull request
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          branch: chore/bump-formae-${{ env.VERSION }}
-          commit-message: "chore: bump formae to ${{ env.VERSION }}"
-          title: "chore: bump formae to ${{ env.VERSION }}"
-          body: |
-            Automated PR to update formae to version `${{ env.VERSION }}`.
+      - name: Commit, push, and create PR
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          BRANCH="chore/bump-formae-${VERSION}"
+          git config user.name "peldroid[bot]"
+          git config user.email "peldroid[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git add Chart.yaml
+          git commit -m "chore: bump formae to ${VERSION}"
+          git push -u origin "$BRANCH"
+          gh pr create \
+            --title "chore: bump formae to ${VERSION}" \
+            --body "Automated PR to update formae to version \`${VERSION}\`.
 
-            - `appVersion` → `${{ env.VERSION }}`
-            - `version` → `${{ env.VERSION }}`
+          - \`appVersion\` → \`${VERSION}\`
+          - \`version\` → \`${VERSION}\`
 
-            Triggered by a new release in [platform-engineering-labs/formae](https://github.com/platform-engineering-labs/formae).
-          labels: automated
+          Triggered by a new release in [platform-engineering-labs/formae](https://github.com/platform-engineering-labs/formae)."

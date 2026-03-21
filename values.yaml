@@ -118,6 +118,8 @@ formae:
   ## Plugin configuration
   plugins:
     pluginDir: /opt/pel/formae/plugins
+    ## Raw additional plugin config lines appended to the `plugins` block in formae.conf.pkl
+    extraPluginConfig: ""
 
   ## Raw additional PKL config lines appended to formae.conf.pkl
   extraConfig: ""

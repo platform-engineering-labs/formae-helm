@@ -1,0 +1,37 @@
+formae:
+  plugins:
+    extraPluginConfig: |
+      authentication {
+        type = "basic"
+        authorizedUsers = new Listing<User> {
+            new {
+                username = "myUserName"
+                // BCrypt salted password hash
+                password = "$2y$10$odYTAlJ7Z.IRutLFCH.pm.gWkExcM1Kyb.yyUehfY6TUQSKcA.a5m"
+            }
+        }
+      }
+
+livenessProbe:
+  httpGet:
+    path: /api/v1/health
+    port: http
+    httpHeaders:
+      - name: Authorization
+        value: "Basic bXlVc2VyTmFtZTp5b3VyUGFzc3dvcmQ="
+  initialDelaySeconds: 15
+  periodSeconds: 20
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /api/v1/health
+    port: http
+    httpHeaders:
+      - name: Authorization
+        value: "Basic bXlVc2VyTmFtZTp5b3VyUGFzc3dvcmQ="
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3

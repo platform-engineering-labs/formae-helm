@@ -128,11 +128,15 @@ data:
       disableUsageReporting = {{ .Values.formae.cli.disableUsageReporting }}
     }
 
-    {{- if .Values.formae.plugins.pluginDir }}
+
     plugins {
+      {{- if .Values.formae.plugins.pluginDir }}
       pluginDir = {{ .Values.formae.plugins.pluginDir | quote }}
+      {{- end }}
+      {{- if .Values.formae.plugins.extraPluginConfig }}
+      {{ .Values.formae.plugins.extraPluginConfig | nindent 6 }}
+      {{- end }}
     }
-    {{- end }}
 
     {{- if .Values.formae.extraConfig }}
     {{ .Values.formae.extraConfig | nindent 4 }}

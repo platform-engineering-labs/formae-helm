@@ -5,6 +5,10 @@ metadata:
   labels:
     {{- include "formae.labels" . | nindent 4 }}
 data:
+  {{- if .Values.formae.existingConfig }}
+  formae.conf.pkl: |
+{{ .Values.formae.existingConfig | indent 4 }}
+  {{- else }}
   formae.conf.pkl: |
     amends "formae:/Config.pkl"
 
@@ -128,12 +132,26 @@ data:
       disableUsageReporting = {{ .Values.formae.cli.disableUsageReporting }}
     }
 
-    {{- if .Values.formae.plugins.pluginDir }}
+    {{- if or .Values.formae.plugins.pluginDir .Values.formae.auth.enabled }}
     plugins {
+      {{- if .Values.formae.plugins.pluginDir }}
       pluginDir = {{ .Values.formae.plugins.pluginDir | quote }}
+      {{- end }}
+      {{- if .Values.formae.auth.enabled }}
+      authentication {
+        type = "basic"
+        authorizedUsers = new Listing<User> {
+          new {
+            username = read("env:FORMAE_AUTH_USERNAME")
+            password = read("env:FORMAE_AUTH_PASSWORD")
+          }
+        }
+      }
+      {{- end }}
     }
     {{- end }}
 
     {{- if .Values.formae.extraConfig }}
     {{ .Values.formae.extraConfig | nindent 4 }}
     {{- end }}
+  {{- end }}

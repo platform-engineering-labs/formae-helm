@@ -1,0 +1,130 @@
+# formae agent with a custom formae.conf.pkl
+#
+# Usage:
+#   helm install formae . -f examples/formae-custom-config.yaml \
+#     --set postgresql.auth.password=<your-db-password>
+#
+# Deploys: formae agent + in-cluster PostgreSQL, using a fully custom PKL config
+# Good for: Advanced setups where the chart-generated config is not sufficient
+#
+# When existingConfig is set, all other formae.* values (auth, datastore,
+# server, logging, etc.) are ignored — you own the entire config.
+# Use read("env:...") in your PKL to pull secrets from environment variables,
+# then inject them via extraEnv with secretKeyRef.
+#
+# NOTE: If your config enables authentication, override the probes to use
+# tcpSocket instead of httpGet, since the health endpoint will return 401.
+
+postgresql:
+  enabled: true
+  auth:
+    username: formae
+    # password: set via --set or existingSecret
+    database: formae
+  persistence:
+    enabled: true
+    size: 8Gi
+
+formae:
+  existingConfig: |
+    amends "formae:/Config.pkl"
+
+    agent {
+      server {
+        port = 49684
+      }
+
+      datastore {
+        datastoreType = "postgres"
+        postgres {
+          host = "formae-custom-postgresql"
+          port = 5432
+          user = "formae"
+          password = read("env:FORMAE_DB_PASSWORD")
+          database = "formae"
+        }
+      }
+
+      logging {
+        consoleLogLevel = "info"
+      }
+
+      synchronization {
+        enabled = true
+        interval = 5.min
+      }
+
+      discovery {
+        enabled = true
+        interval = 10.min
+      }
+
+      retry {
+        statusCheckInterval = 20.s
+        maxRetries = 9
+        retryDelay = 10.s
+      }
+    }
+
+    plugins {
+      pluginDir = "/opt/pel/formae/plugins"
+
+      authentication {
+        type = "basic"
+        authorizedUsers = new Listing<User> {
+          new {
+            username = read("env:FORMAE_AUTH_USERNAME")
+            password = read("env:FORMAE_AUTH_PASSWORD")
+          }
+        }
+      }
+    }
+
+    cli {
+      disableUsageReporting = true
+    }
+
+## Inject secrets as env vars — the PKL config reads them at runtime
+extraEnv:
+  - name: FORMAE_DB_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: my-db-secret
+        key: password
+  - name: FORMAE_AUTH_USERNAME
+    valueFrom:
+      secretKeyRef:
+        name: my-auth-secret
+        key: username
+  - name: FORMAE_AUTH_PASSWORD
+    valueFrom:
+      secretKeyRef:
+        name: my-auth-secret
+        key: password
+
+## Override probes to tcpSocket since basic auth returns 401 on /api/v1/health
+livenessProbe:
+  httpGet: null
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 15
+  periodSeconds: 20
+
+readinessProbe:
+  httpGet: null
+  tcpSocket:
+    port: http
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+grafana:
+  dashboards:
+    enabled: false
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: "1"
+  limits:
+    memory: 1Gi
+    cpu: "2"

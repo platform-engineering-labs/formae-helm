@@ -48,12 +48,26 @@ spec:
               containerPort: {{ .Values.formae.server.port }}
               protocol: TCP
           env:
+            {{- if not .Values.formae.existingConfig }}
             {{- if eq .Values.formae.datastore.type "postgres" }}
             - name: FORMAE_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "formae.postgres.secretName" . }}
                   key: {{ include "formae.postgres.secretKey" . }}
+            {{- end }}
+            {{- if .Values.formae.auth.enabled }}
+            - name: FORMAE_AUTH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "formae.auth.secretName" . }}
+                  key: {{ .Values.formae.auth.basic.usernameKey }}
+            - name: FORMAE_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "formae.auth.secretName" . }}
+                  key: {{ .Values.formae.auth.basic.passwordKey }}
+            {{- end }}
             {{- end }}
             {{- if .Values.formae.otel.enabled }}
             - name: FORMAE_OTEL_ENABLED
@@ -66,6 +80,18 @@ spec:
             {{- with .Values.extraEnv }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
+          {{- if and .Values.formae.auth.enabled (not .Values.formae.existingConfig) }}
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          {{- else }}
           {{- with .Values.livenessProbe }}
           livenessProbe:
             {{- toYaml . | nindent 12 }}
@@ -73,6 +99,7 @@ spec:
           {{- with .Values.readinessProbe }}
           readinessProbe:
             {{- toYaml . | nindent 12 }}
+          {{- end }}
           {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

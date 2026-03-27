@@ -119,8 +119,43 @@ formae:
   plugins:
     pluginDir: /opt/pel/formae/plugins
 
+  ## Basic auth for the formae agent API.
+  ## Password must be a bcrypt hash. Generate with:
+  ##   htpasswd -bnBC 10 "" yourPassword | tr -d ':'
+  auth:
+    enabled: false
+    basic:
+      username: ""
+      password: ""   # bcrypt hash
+      ## Use an existing Secret instead of inline values.
+      ## Secret must contain keys matching usernameKey and passwordKey.
+      existingSecret: ""
+      usernameKey: username
+      passwordKey: password
+
   ## Raw additional PKL config lines appended to formae.conf.pkl
   extraConfig: ""
+
+  ## Bring your own formae.conf.pkl.
+  ## When set, the chart ignores all formae.* values above (including auth)
+  ## and uses this content verbatim as formae.conf.pkl.
+  ## Use read("env:...") in your PKL for secrets, and inject them via extraEnv.
+  existingConfig: ""
+  # existingConfig: |
+  #   amends "formae:/Config.pkl"
+  #   agent {
+  #     server { port = 49684 }
+  #     datastore {
+  #       datastoreType = "postgres"
+  #       postgres {
+  #         host = "my-db"
+  #         port = 5432
+  #         user = "formae"
+  #         password = read("env:FORMAE_DB_PASSWORD")
+  #         database = "formae"
+  #       }
+  #     }
+  #   }
 
 ## Service configuration
 service:

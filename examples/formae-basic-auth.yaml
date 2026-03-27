@@ -1,0 +1,49 @@
+# formae agent with basic authentication
+#
+# Usage:
+#   helm install formae . -f examples/formae-basic-auth.yaml \
+#     --set postgresql.auth.password=<your-db-password> \
+#     --set formae.auth.basic.username=admin \
+#     --set formae.auth.basic.password='<bcrypt-hash>'
+#
+# Generate a bcrypt hash:
+#   htpasswd -bnBC 10 "" yourPassword | tr -d ':'
+#
+# Deploys: formae agent + in-cluster PostgreSQL, with basic auth enabled
+# Good for: Production environments requiring API authentication
+
+postgresql:
+  enabled: true
+  auth:
+    username: formae
+    # password: set via --set or existingSecret
+    database: formae
+  persistence:
+    enabled: true
+    size: 8Gi
+
+formae:
+  datastore:
+    type: postgres
+
+  auth:
+    enabled: true
+    basic:
+      username: ""   # set via --set
+      password: ""   # set via --set (must be a bcrypt hash)
+      ## Or use an existing Kubernetes Secret:
+      # existingSecret: my-auth-secret
+      # usernameKey: username
+      # passwordKey: password
+
+grafana:
+  dashboards:
+    enabled: false
+
+resources:
+  requests:
+    memory: 512Mi
+    cpu: "1"
+  limits:
+    memory: 1Gi
+    cpu: "2"

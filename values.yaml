@@ -243,6 +243,9 @@ readinessProbe:
 ## Extra environment variables
 extraEnv: []
 
+## Init containers (e.g. to install plugins from OCI images)
+initContainers: []
+
 ## Extra volumes and mounts
 extraVolumes: []
 extraVolumeMounts: []

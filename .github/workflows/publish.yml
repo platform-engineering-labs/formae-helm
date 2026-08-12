@@ -1,0 +1,33 @@
+name: Publish Helm chart to GHCR
+
+on:
+  push:
+    branches: ['main']
+    paths:
+      - Chart.yaml
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract chart version
+        id: chart
+        run: |
+          VERSION=$(grep '^version:' Chart.yaml | awk '{print $2}')
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Package chart
+        run: helm package .
+
+      - name: Push chart to GHCR
+        run: helm push formae-${{ steps.chart.outputs.version }}.tgz oci://ghcr.io/${{ github.repository_owner }}/charts

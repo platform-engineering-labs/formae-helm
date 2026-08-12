@@ -5,6 +5,10 @@ metadata:
   labels:
     {{- include "formae.labels" . | nindent 4 }}
 data:
+  {{- if .Values.formae.existingConfig }}
+  formae.conf.pkl: |
+{{ .Values.formae.existingConfig | indent 4 }}
+  {{- else }}
   formae.conf.pkl: |
     amends "formae:/Config.pkl"
 
@@ -100,6 +104,18 @@ data:
         retryDelay = {{ .Values.formae.retry.retryDelay }}
       }
 
+      {{- if .Values.formae.auth.enabled }}
+      auth {
+        type = "auth-basic"
+        authorizedUsers = new Listing {
+          new Mapping {
+            ["Username"] = read("env:FORMAE_AUTH_USERNAME")
+            ["Password"] = read("env:FORMAE_AUTH_PASSWORD")
+          }
+        }
+      }
+      {{- end }}
+
       {{- if .Values.formae.otel.enabled }}
       oTel {
         enabled = true
@@ -129,11 +145,10 @@ data:
     }
 
     {{- if .Values.formae.plugins.pluginDir }}
-    plugins {
-      pluginDir = {{ .Values.formae.plugins.pluginDir | quote }}
-    }
+    pluginDir = {{ .Values.formae.plugins.pluginDir | quote }}
     {{- end }}
 
     {{- if .Values.formae.extraConfig }}
     {{ .Values.formae.extraConfig | nindent 4 }}
     {{- end }}
+  {{- end }}

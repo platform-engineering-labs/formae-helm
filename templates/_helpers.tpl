@@ -107,6 +107,17 @@ PostgreSQL password secret key
 {{- end }}
 
 {{/*
+Auth basic secret name
+*/}}
+{{- define "formae.auth.secretName" -}}
+{{- if .Values.formae.auth.basic.existingSecret }}
+  {{- .Values.formae.auth.basic.existingSecret }}
+{{- else }}
+  {{- printf "%s-auth" (include "formae.fullname" .) }}
+{{- end }}
+{{- end }}
+
+{{/*
 Grafana dashboard namespace
 */}}
 {{- define "formae.grafana.namespace" -}}

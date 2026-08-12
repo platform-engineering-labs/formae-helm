@@ -15,11 +15,17 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if and .Values.formae.auth.enabled (not .Values.formae.auth.basic.existingSecret) (not .Values.formae.existingConfig) }}
+        checksum/auth: {{ include (print $.Template.BasePath "/auth-secret.yaml") . | sha256sum }}
+        {{- end }}
       {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         {{- include "formae.labels" . | nindent 8 }}
+        ## Distinguishes agent pods from the PostgreSQL pod. Not in
+        ## spec.selector, which is immutable on existing releases.
+        app.kubernetes.io/component: agent
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -48,12 +54,26 @@ spec:
               containerPort: {{ .Values.formae.server.port }}
               protocol: TCP
           env:
+            {{- if not .Values.formae.existingConfig }}
             {{- if eq .Values.formae.datastore.type "postgres" }}
             - name: FORMAE_DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "formae.postgres.secretName" . }}
                   key: {{ include "formae.postgres.secretKey" . }}
+            {{- end }}
+            {{- if .Values.formae.auth.enabled }}
+            - name: FORMAE_AUTH_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "formae.auth.secretName" . }}
+                  key: {{ .Values.formae.auth.basic.usernameKey }}
+            - name: FORMAE_AUTH_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "formae.auth.secretName" . }}
+                  key: {{ .Values.formae.auth.basic.passwordKey }}
+            {{- end }}
             {{- end }}
             {{- if .Values.formae.otel.enabled }}
             - name: FORMAE_OTEL_ENABLED

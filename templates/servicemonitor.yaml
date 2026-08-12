@@ -9,6 +9,7 @@ spec:
   selector:
     matchLabels:
       {{- include "formae.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: agent
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}

@@ -20,10 +20,14 @@ serviceAccount:
 podAnnotations: {}
 podLabels: {}
 
+## Must match the `pel` user in the formae image (uid/gid 1001), otherwise the
+## agent cannot write to its home directory and crashes with
+## "mkdir /home/pel/.config: permission denied".
 podSecurityContext:
   runAsNonRoot: true
-  runAsUser: 1000
-  fsGroup: 1000
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
 
 securityContext:
   allowPrivilegeEscalation: false

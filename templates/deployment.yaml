@@ -23,6 +23,9 @@ spec:
       {{- end }}
       labels:
         {{- include "formae.labels" . | nindent 8 }}
+        ## Distinguishes agent pods from the PostgreSQL pod. Not in
+        ## spec.selector, which is immutable on existing releases.
+        app.kubernetes.io/component: agent
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

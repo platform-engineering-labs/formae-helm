@@ -4,6 +4,7 @@ metadata:
   name: {{ include "formae.fullname" . }}
   labels:
     {{- include "formae.labels" . | nindent 4 }}
+    app.kubernetes.io/component: agent
   {{- with .Values.service.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -23,3 +24,7 @@ spec:
     {{- end }}
   selector:
     {{- include "formae.selectorLabels" . | nindent 4 }}
+    ## Without the component label this Service also matches the PostgreSQL
+    ## pod, which carries the same name/instance labels — half the API traffic
+    ## would be routed to PostgreSQL.
+    app.kubernetes.io/component: agent

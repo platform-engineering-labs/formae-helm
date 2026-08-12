@@ -77,6 +77,7 @@ htpasswd -bnBC 10 "" yourPassword | tr -d ':\n'
 
 Notes:
 
+- **Requires formae >= 0.84.0.** Earlier images ship the legacy in-binary auth plugin, which the agent no longer loads. Set `image.tag` accordingly if the chart's `appVersion` is older.
 - The `auth-basic` plugin ships in the formae image (part of the `standard` metapackage), so no extra install is needed. The agent refuses to start if auth is configured but the plugin is missing.
 - `/api/v1/health` stays unauthenticated, so the default `httpGet` probes and the `helm test` hook keep working.
 - The chart configures the agent side only. To use the `formae` CLI against an authenticated agent, add `cli.auth` (with the **plaintext** password, not the hash) to your local `formae.conf.pkl`.

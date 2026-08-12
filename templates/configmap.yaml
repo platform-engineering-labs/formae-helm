@@ -104,6 +104,18 @@ data:
         retryDelay = {{ .Values.formae.retry.retryDelay }}
       }
 
+      {{- if .Values.formae.auth.enabled }}
+      auth {
+        type = "auth-basic"
+        authorizedUsers = new Listing {
+          new Mapping {
+            ["Username"] = read("env:FORMAE_AUTH_USERNAME")
+            ["Password"] = read("env:FORMAE_AUTH_PASSWORD")
+          }
+        }
+      }
+      {{- end }}
+
       {{- if .Values.formae.otel.enabled }}
       oTel {
         enabled = true
@@ -132,23 +144,8 @@ data:
       disableUsageReporting = {{ .Values.formae.cli.disableUsageReporting }}
     }
 
-    {{- if or .Values.formae.plugins.pluginDir .Values.formae.auth.enabled }}
-    plugins {
-      {{- if .Values.formae.plugins.pluginDir }}
-      pluginDir = {{ .Values.formae.plugins.pluginDir | quote }}
-      {{- end }}
-      {{- if .Values.formae.auth.enabled }}
-      authentication {
-        type = "basic"
-        authorizedUsers = new Listing<User> {
-          new {
-            username = read("env:FORMAE_AUTH_USERNAME")
-            password = read("env:FORMAE_AUTH_PASSWORD")
-          }
-        }
-      }
-      {{- end }}
-    }
+    {{- if .Values.formae.plugins.pluginDir }}
+    pluginDir = {{ .Values.formae.plugins.pluginDir | quote }}
     {{- end }}
 
     {{- if .Values.formae.extraConfig }}

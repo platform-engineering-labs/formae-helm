@@ -11,9 +11,6 @@
 # server, logging, etc.) are ignored — you own the entire config.
 # Use read("env:...") in your PKL to pull secrets from environment variables,
 # then inject them via extraEnv with secretKeyRef.
-#
-# NOTE: If your config enables authentication, override the probes to use
-# tcpSocket instead of httpGet, since the health endpoint will return 401.
 
 postgresql:
   enabled: true
@@ -64,21 +61,19 @@ formae:
         maxRetries = 9
         retryDelay = 10.s
       }
-    }
 
-    plugins {
-      pluginDir = "/opt/pel/formae/plugins"
-
-      authentication {
-        type = "basic"
-        authorizedUsers = new Listing<User> {
-          new {
-            username = read("env:FORMAE_AUTH_USERNAME")
-            password = read("env:FORMAE_AUTH_PASSWORD")
+      auth {
+        type = "auth-basic"
+        authorizedUsers = new Listing {
+          new Mapping {
+            ["Username"] = read("env:FORMAE_AUTH_USERNAME")
+            ["Password"] = read("env:FORMAE_AUTH_PASSWORD")
           }
         }
       }
     }
+
+    pluginDir = "/opt/pel/formae/plugins"
 
     cli {
       disableUsageReporting = true
@@ -101,21 +96,6 @@ extraEnv:
       secretKeyRef:
         name: my-auth-secret
         key: password
-
-## Override probes to tcpSocket since basic auth returns 401 on /api/v1/health
-livenessProbe:
-  httpGet: null
-  tcpSocket:
-    port: http
-  initialDelaySeconds: 15
-  periodSeconds: 20
-
-readinessProbe:
-  httpGet: null
-  tcpSocket:
-    port: http
-  initialDelaySeconds: 5
-  periodSeconds: 10
 
 grafana:
   dashboards:

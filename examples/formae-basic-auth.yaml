@@ -7,7 +7,7 @@
 #     --set formae.auth.basic.password='<bcrypt-hash>'
 #
 # Generate a bcrypt hash:
-#   htpasswd -bnBC 10 "" yourPassword | tr -d ':'
+#   htpasswd -bnBC 10 "" yourPassword | tr -d ':\n'
 #
 # Deploys: formae agent + in-cluster PostgreSQL, with basic auth enabled
 # Good for: Production environments requiring API authentication

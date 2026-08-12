@@ -72,8 +72,14 @@ See [`examples/quickstart-monitoring.yaml`](examples/quickstart-monitoring.yaml)
 Generate a bcrypt hash with:
 
 ```bash
-htpasswd -bnBC 10 "" yourPassword | tr -d ':'
+htpasswd -bnBC 10 "" yourPassword | tr -d ':\n'
 ```
+
+Notes:
+
+- The `auth-basic` plugin ships in the formae image (part of the `standard` metapackage), so no extra install is needed. The agent refuses to start if auth is configured but the plugin is missing.
+- `/api/v1/health` stays unauthenticated, so the default `httpGet` probes and the `helm test` hook keep working.
+- The chart configures the agent side only. To use the `formae` CLI against an authenticated agent, add `cli.auth` (with the **plaintext** password, not the hash) to your local `formae.conf.pkl`.
 
 Example with inline credentials:
 
@@ -119,14 +125,12 @@ formae:
           password = read("env:FORMAE_DB_PASSWORD")
         }
       }
-    }
-    plugins {
-      authentication {
-        type = "basic"
-        authorizedUsers = new Listing<User> {
-          new {
-            username = read("env:FORMAE_AUTH_USERNAME")
-            password = read("env:FORMAE_AUTH_PASSWORD")
+      auth {
+        type = "auth-basic"
+        authorizedUsers = new Listing {
+          new Mapping {
+            ["Username"] = read("env:FORMAE_AUTH_USERNAME")
+            ["Password"] = read("env:FORMAE_AUTH_PASSWORD")
           }
         }
       }

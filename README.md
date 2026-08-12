@@ -157,6 +157,52 @@ extraEnv:
 
 See [`examples/formae-custom-config.yaml`](examples/formae-custom-config.yaml) for a complete example.
 
+### Init Containers
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `initContainers` | Init containers rendered verbatim into the agent Pod | `[]` |
+
+Waiting for the database removes the one crash-and-restart that otherwise happens
+on a fresh install, where the agent starts before PostgreSQL accepts connections:
+
+```yaml
+initContainers:
+  - name: wait-for-postgresql
+    image: busybox
+    command: ["sh", "-c", "until nc -z formae-postgresql 5432; do sleep 2; done"]
+```
+
+Installing extra plugins means mounting a volume over the image's plugin
+directory, which **hides the plugins that ship in the image** (`aws`, `azure`,
+`gcp`, `k8s`, `auth-basic`). Copy them into the volume first, or the agent loses
+them — with `formae.auth.enabled` it then refuses to start entirely:
+
+```yaml
+initContainers:
+  - name: install-custom-plugin
+    image: ghcr.io/platform-engineering-labs/formae:0.88.1
+    command:
+      - sh
+      - -c
+      ## cp -R, not cp -a: preserving timestamps on the volume root fails as non-root
+      - cp -R /opt/pel/formae/plugins/. /plugins/ && cp -R /plugin/. /plugins/
+    volumeMounts:
+      - name: plugins
+        mountPath: /plugins
+
+extraVolumes:
+  - name: plugins
+    emptyDir: {}
+
+extraVolumeMounts:
+  - name: plugins
+    mountPath: /opt/pel/formae/plugins
+```
+
+`podSecurityContext` applies to init containers too, so their images must run as
+uid 1001 and cannot be root.
+
 ### Observability
 
 | Parameter | Description | Default |
